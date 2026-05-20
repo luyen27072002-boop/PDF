@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Local PDF Editor</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">+</div>
+        <div>
+          <h1>Đây là Web của Luyện và Di Di</h1>
+          <p>Tim còn đập, chân còn bước, ngại gì vết xước.</p>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button
+          id="searchBtn"
+          class="toolbar-button secondary"
+          title="Tìm trong PDF"
+        >
+          Tìm
+        </button>
+        <button
+          id="extractTextBtn"
+          class="toolbar-button secondary"
+          title="Xem/copy text trang hiện tại"
+        >
+          Text
+        </button>
+        <button
+          id="printBtn"
+          class="toolbar-button secondary"
+          title="In bản đang export"
+        >
+          In
+        </button>
+        <button id="exportBtn" class="primary-button">Xuất PDF</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <button class="tool active" data-tool="pan">
+        <span>☰</span><b>Thumbnails</b>
+      </button>
+      <button id="undoBtn" class="tool small"><span>↶</span><b>Undo</b></button>
+      <button id="redoBtn" class="tool small"><span>↷</span><b>Redo</b></button>
+      <button class="tool" data-tool="text">
+        <span>T</span><b>Add text</b>
+      </button>
+      <button class="tool" data-tool="editText">
+        <span>✎</span><b>Edit text</b>
+      </button>
+      <button class="tool" data-tool="sign"><span>✍</span><b>Sign</b></button>
+      <button class="tool" data-tool="line"><span>╱</span><b>Line</b></button>
+      <button class="tool" data-tool="draw"><span>⌁</span><b>Draw</b></button>
+      <button class="tool" data-tool="eraser">
+        <span>⌫</span><b>Eraser</b>
+      </button>
+      <button class="tool" data-tool="whiteout">
+        <span>▭</span><b>Whiteout</b>
+      </button>
+      <button class="tool" data-tool="redact">
+        <span>■</span><b>Redact</b>
+      </button>
+      <button class="tool" data-tool="highlight">
+        <span>▰</span><b>Highlight</b>
+      </button>
+      <button class="tool" data-tool="textHighlight">
+        <span>▣</span><b>Text highlight</b>
+      </button>
+      <label class="tool file-tool" title="Thêm ảnh vào PDF">
+        <span>▧</span><b>Image</b
+        ><input id="imageInput" type="file" accept="image/*" hidden />
+      </label>
+      <button class="tool" data-tool="stamp"><span>▣</span><b>Stamp</b></button>
+      <button class="tool" data-tool="link"><span>🔗</span><b>Link</b></button>
+      <button class="tool" data-tool="note"><span>⚑</span><b>Note</b></button>
+      <button id="manageBtn" class="tool">
+        <span>⚙</span><b>Manage pages</b>
+      </button>
+    </div>
+
+    <div class="formatbar">
+      <input id="pdfInput" type="file" accept="application/pdf" />
+      <label
+        >Zoom <input id="zoomRange" type="range" min="40" max="220" value="100"
+      /></label>
+      <span id="zoomLabel">100%</span>
+      <label
+        >Font
+        <select id="fontFamily">
+          <option value="Arial">Arial</option>
+          <option value="Helvetica">Helvetica</option>
+          <option value="Times New Roman">Times New Roman</option>
+          <option value="Courier New">Courier New</option>
+          <option value="Calibri">Calibri</option>
+          <option value="Cambria">Cambria</option>
+          <option value="Georgia">Georgia</option>
+          <option value="Verdana">Verdana</option>
+          <option value="Tahoma">Tahoma</option>
+          <option value="Segoe UI">Segoe UI</option>
+        </select>
+      </label>
+      <label
+        >Size <input id="fontSize" type="number" min="6" max="120" value="18"
+      /></label>
+      <label
+        >Giãn chữ
+        <input
+          id="letterSpacing"
+          type="number"
+          min="-2"
+          max="10"
+          step="0.1"
+          value="0"
+          title="Khoảng cách giữa ký tự"
+      /></label>
+      <label
+        >Line
+        <input
+          id="lineHeight"
+          type="number"
+          min="0.6"
+          max="3"
+          step="0.05"
+          value="1"
+          title="Độ cao dòng"
+      /></label>
+      <label>Màu <input id="colorInput" type="color" value="#111111" /></label>
+      <button id="boldBtn" class="mini" title="Đậm">B</button>
+      <button id="italicBtn" class="mini" title="Nghiêng"><i>I</i></button>
+      <label
+        >Căn
+        <select id="textAlign">
+          <option value="left">Trái</option>
+          <option value="center">Giữa</option>
+          <option value="right">Phải</option>
+        </select>
+      </label>
+      <label
+        class="check-label"
+        title="Khi Edit text, tự lấy font/cỡ/màu từ chữ gốc trong PDF"
+      >
+        <input id="preserveStyle" type="checkbox" checked /> Giữ kiểu chữ gốc
+      </label>
+      <label title="Cách xóa chữ cũ khi Edit text"
+        >Xóa gốc
+        <select id="eraseMode">
+          <option value="text" selected>Xóa text, giữ nền</option>
+          <option value="whiteout">Che bằng màu nền</option>
+          <option value="none">Không xóa gốc</option>
+        </select>
+      </label>
+      <label
+        >Nền che <input id="coverColor" type="color" value="#ffffff"
+      /></label>
+      <label
+        class="check-label"
+        title="Render lại nền đã xóa chữ cũ để không thấy ô trắng và không mất watermark/đường kẻ"
+      >
+        <input id="cleanPreview" type="checkbox" checked /> Preview sạch
+      </label>
+      <label
+        class="check-label"
+        title="Ẩn khung xanh quanh chữ mới khi đang sửa"
+      >
+        <input id="hideEditGuides" type="checkbox" checked /> Ẩn khung
+      </label>
+      <label
+        >Stamp
+        <select id="stampText">
+          <option>PAID</option>
+          <option>APPROVED</option>
+          <option>DRAFT</option>
+          <option>RECEIVED</option>
+          <option>CANCELLED</option>
+        </select>
+      </label>
+      <label
+        >Xuất kiểu
+        <select
+          id="exportMode"
+          title="Native giữ text/vector tốt hơn; Flatten giống preview hơn"
+        >
+          <option value="native" selected>Native: xóa chữ giữ nền</option>
+          <option value="flatten">Flatten: giống preview</option>
+        </select>
+      </label>
+      <label
+        >Render
+        <select id="renderMode">
+          <option value="server">PDFium backend</option>
+          <option value="pdfjs">PDF.js browser/XFA</option>
+        </select>
+      </label>
+      <span id="status">Chưa có file PDF.</span>
+    </div>
+
+    <main class="layout">
+      <aside class="sidebar" id="sidebar">
+        <section class="upload-card">
+          <b>Chọn file PDF</b>
+          <p id="fileName">Chưa chọn file.</p>
+        </section>
+        <section class="page-card">
+          <b>Trang</b>
+          <div class="pager-row">
+            <button id="prevBtn">Trước</button>
+            <input id="pageInput" value="1" />
+            <button id="nextBtn">Sau</button>
+          </div>
+          <div class="pager-row split">
+            <button id="rotateLeftBtn">Xoay trái</button>
+            <button id="rotateRightBtn">Xoay phải</button>
+          </div>
+          <button id="deletePageBtn" class="danger wide">Xóa trang này</button>
+          <div class="pager-row split">
+            <button id="moveUpBtn">Lên</button>
+            <button id="moveDownBtn">Xuống</button>
+          </div>
+        </section>
+        <section class="thumbs" id="thumbs"></section>
+      </aside>
+
+      <section class="workspace">
+        <div id="message" class="message">Upload file PDF để bắt đầu.</div>
+        <div class="viewer-shell">
+          <div id="pageWrap" class="page-wrap empty">
+            <canvas id="pdfCanvas"></canvas>
+            <img id="serverImage" alt="PDF page" />
+            <div id="textLayer"></div>
+            <div id="annotationLayer"></div>
+            <canvas id="drawCanvas"></canvas>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="manageDialog">
+      <h2>Manage pages</h2>
+      <p>
+        Xoay, xóa, hoặc đổi thứ tự trang. Khi xuất PDF, các thay đổi này sẽ được
+        áp dụng.
+      </p>
+      <div class="manage-actions">
+        <button id="dialogRotateLeft">Xoay trái</button>
+        <button id="dialogRotateRight">Xoay phải</button>
+        <button id="dialogMoveUp">Đưa lên</button>
+        <button id="dialogMoveDown">Đưa xuống</button>
+        <button id="dialogDelete" class="danger">Xóa trang</button>
+        <button id="closeManage">Đóng</button>
+      </div>
+    </dialog>
+
+    <dialog id="searchDialog">
+      <h2>Tìm trong PDF</h2>
+      <div class="search-line">
+        <input id="searchInput" placeholder="Nhập chữ cần tìm" />
+        <button id="runSearchBtn">Tìm</button>
+        <button id="closeSearch">Đóng</button>
+      </div>
+      <div id="searchResults" class="search-results"></div>
+    </dialog>
+    <dialog id="textDialog">
+      <h2>Text trong PDF</h2>
+      <p>
+        Đây là text layer trích từ PDF. Nếu trống thì PDF là ảnh scan hoặc form
+        không có text layer, cần OCR.
+      </p>
+      <textarea id="extractedText" spellcheck="false"></textarea>
+      <div class="manage-actions">
+        <button id="copyTextBtn">Copy text</button>
+        <button id="closeTextDialog">Đóng</button>
+      </div>
+    </dialog>
+
+    <template id="quickHelp">
+      <b>Cách dùng nhanh:</b>
+      Chọn công cụ ở thanh trên. Với Add text/Stamp/Note/Image: click vào trang.
+      Với Highlight/Redact/Line: kéo vùng. Với Draw/Sign: giữ chuột và vẽ. Chọn
+      một đối tượng để kéo, resize, hoặc bấm Delete để xóa.
+    </template>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
